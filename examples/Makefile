@@ -7,10 +7,11 @@ LINK_ARGS=-L ../target/debug -lwgpu_native
 %.o: %.c $(DEPS)
 	$(CC) $(LINK_ARGS) -c -o $(OUTDIR)/$@ $< $(CFLAGS)
 
-hello_triangle_c: hello_triangle_c/main.c
+$(OUTDIR)/hello_triangle_c: hello_triangle_c/main.c
 	mkdir -p $(OUTDIR)
-	$(CC) $(LINK_ARGS) -o $(OUTDIR)/$@ $^ $(CFLAGS)
+	$(CC) $(LINK_ARGS) -o $@ $^ $(CFLAGS)
 
 .PHONY: all
 
-all: hello_triangle_c
+all: build/hello_triangle_c
+

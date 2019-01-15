@@ -2,7 +2,7 @@ CC=gcc
 CFLAGS=-I.
 DEPS=./wgpu-bindings/wgpu.h
 OUTDIR=./build
-LINK_ARGS=-L ../target/debug -lwgpu_native
+LINK_ARGS=-L ../target/debug -lwgpu_native -I.
 
 %.o: %.c $(DEPS)
 	$(CC) $(LINK_ARGS) -c -o $(OUTDIR)/$@ $< $(CFLAGS)
@@ -11,7 +11,9 @@ $(OUTDIR)/hello_triangle_c: hello_triangle_c/main.c
 	mkdir -p $(OUTDIR)
 	$(CC) $(LINK_ARGS) -o $@ $^ $(CFLAGS)
 
-.PHONY: all
+.PHONY: all clean
 
-all: build/hello_triangle_c
+all: $(OUTDIR)/hello_triangle_c
 
+clean:
+	rm -f $(OUTDIR)/hello_triangle_c

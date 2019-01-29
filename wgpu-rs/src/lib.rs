@@ -41,12 +41,33 @@ pub struct TextureView {
     id: wgn::TextureViewId,
 }
 
+pub struct Sampler {
+    id: wgn::SamplerId,
+}
+
 pub struct Surface {
     id: wgn::SurfaceId,
 }
 
 pub struct SwapChain {
     id: wgn::SwapChainId,
+}
+
+pub struct BufferBinding<'a> {
+    pub buffer: &'a Buffer,
+    pub offset: u32,
+    pub size: u32,
+}
+
+pub enum BindingResource<'a> {
+    Buffer(BufferBinding<'a>),
+    Sampler(&'a Sampler),
+    TextureView(&'a TextureView),
+}
+
+pub struct Binding<'a> {
+    pub binding: u32,
+    pub resource: BindingResource<'a>,
 }
 
 pub struct BindGroupLayout {
@@ -101,6 +122,11 @@ pub struct Queue {
 
 pub struct BindGroupLayoutDescriptor<'a> {
     pub bindings: &'a [BindGroupLayoutBinding],
+}
+
+pub struct BindGroupDescriptor<'a> {
+    pub layout: &'a BindGroupLayout,
+    pub bindings: &'a [Binding<'a>],
 }
 
 pub struct PipelineLayoutDescriptor<'a> {
@@ -184,6 +210,37 @@ impl Device {
     pub fn create_command_buffer(&self, desc: &CommandBufferDescriptor) -> CommandBuffer {
         CommandBuffer {
             id: wgn::wgpu_device_create_command_buffer(self.id, desc),
+        }
+    }
+
+    pub fn create_bind_group(&self, desc: &BindGroupDescriptor) -> BindGroup {
+        use BindingResource::*;
+        let bindings = desc.bindings.iter().map(|binding|
+            wgn::Binding {
+                binding: binding.binding,
+                resource: match &binding.resource {
+                    Buffer(buffer) =>
+                        wgn::BindingResource::Buffer(wgn::BufferBinding {
+                            buffer: buffer.buffer.id,
+                            offset: buffer.offset,
+                            size: buffer.size,
+                        }),
+                    Sampler(sampler) =>
+                        wgn::BindingResource::Sampler(sampler.id),
+                    TextureView(texture_view) =>
+                        wgn::BindingResource::TextureView(texture_view.id),
+                },
+            }
+        ).collect::<Vec<_>>();
+        BindGroup {
+            id: wgn::wgpu_device_create_bind_group(
+                self.id,
+                &wgn::BindGroupDescriptor {
+                    layout: desc.layout.id,
+                    bindings: bindings.as_ptr(),
+                    bindings_length: bindings.len(),
+                },
+            ),
         }
     }
 

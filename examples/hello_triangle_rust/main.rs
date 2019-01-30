@@ -17,11 +17,50 @@ fn main() {
     let fs_bytes = include_bytes!("./../data/hello_triangle.frag.spv");
     let fs_module = device.create_shader_module(fs_bytes);
 
+    let vertex_binding_layout = wgpu::BindGroupLayoutBinding {
+        binding: 0,
+        visibility: wgpu::ShaderStageFlags::VERTEX,
+        ty: wgpu::BindingType::UniformBuffer,
+    };
+
     let bind_group_layout =
-        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { bindings: &[] });
+        device.create_bind_group_layout(&wgpu::BindGroupLayoutDescriptor { bindings: &[vertex_binding_layout] });
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
         bind_group_layouts: &[&bind_group_layout],
     });
+    
+    let size = std::mem::size_of::<[u32; 2]>() as u32 * 3;
+
+    let vertex_buffer_descriptor = wgpu::BufferDescriptor {
+        size,
+        usage: wgpu_native::BufferUsageFlags::UNIFORM,
+    };
+
+    let vertex_buffer = device.create_buffer(&vertex_buffer_descriptor);
+    
+    let vertex_data = [
+        [0.0f32, -0.5],
+        [0.5, 0.5],
+        [-0.5, 0.5],
+    ];
+    
+    let vertex_data = unsafe {
+        std::mem::transmute::<_, [u8; 24]>(vertex_data)
+    };
+    
+    vertex_buffer.set_buffer_data(0, &vertex_data[..]);
+
+    let vertex_binding = wgpu::Binding {
+        binding: 0,
+        resource: wgpu::BindingResource::Buffer {
+            buffer: &vertex_buffer,
+            range: 0..size,
+        },
+    };
+
+    let bind_group =
+        device.create_bind_group(&wgpu::BindGroupDescriptor { layout: &bind_group_layout, bindings: &[vertex_binding] });
+
 
     let blend_state0 = device.create_blend_state(&wgpu::BlendStateDescriptor::REPLACE);
     let depth_stencil_state =
@@ -105,6 +144,7 @@ fn main() {
                     depth_stencil_attachment: None,
                 });
                 rpass.set_pipeline(&render_pipeline);
+                rpass.set_bind_group(0, &bind_group);
                 rpass.draw(0..3, 0..1);
                 rpass.end_pass();
             }

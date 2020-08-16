@@ -1291,6 +1291,7 @@ impl BindGroupLayoutEntry {
 
 /// A description of a bind group layout.
 #[derive(Clone, Debug)]
+#[repr(C)]
 pub struct BindGroupLayoutDescriptor<'a> {
     /// An optional label to apply to the bind group layout.
     /// This can be useful for debugging and performance analysis.
